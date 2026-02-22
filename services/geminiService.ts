@@ -2,15 +2,22 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Language } from "../types";
 
-// Fix: Use new GoogleGenAI instance per call with process.env.API_KEY as per guidelines
+const cleanJson = (text: string) => {
+  return text.replace(/```json/g, "").replace(/```/g, "").trim();
+};
+
 export const huntWinningProducts = async (lang: Language = 'es') => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `[YEAR: 2026] SEARCH THE WEB NOW for 10 "winning products" trending TODAY in March 2026 on TikTok, Amazon, and Global e-commerce.
-    Respond strictly in ${lang === 'es' ? 'Spanish' : lang === 'en' ? 'English' : lang === 'fr' ? 'French' : lang === 'de' ? 'German' : 'Chinese'}.
+    contents: `[INVESTIGACIÓN DE MERCADO REAL ENERO 2026] 
+    Utiliza Google Search para identificar los 50 productos con mayor tendencia de ventas esta semana en TikTok Shop, Amazon y marketplaces globales.
     
-    Return ONLY a JSON array of objects with keys: name, niche, priceEstimate, reasonWhyWinning, potentialMargin, trendScore, imageUrl, sourceUrl, sourceTitle.`,
+    REGLAS PARA LOS ENLACES (CRÍTICO):
+    1. SOURCE_URL: Debe ser un enlace real a una tienda o artículo de noticias verificado. Si no encuentras el enlace directo al producto, pon el enlace del marketplace o la noticia que lo menciona.
+    2. IMAGE_URL: Intenta obtener una URL de imagen directa. Si no estás 100% seguro de que la URL es una imagen pública (.jpg, .png), deja el campo vacío o usa "placeholder".
+    3. NO INVENTES ENLACES: Es preferible un string vacío que un enlace que no funciona.
+    4. Los nombres de los productos deben ser específicos (Marca + Modelo).`,
     config: {
       tools: [{ googleSearch: {} }],
       responseMimeType: "application/json",
@@ -34,62 +41,90 @@ export const huntWinningProducts = async (lang: Language = 'es') => {
       }
     }
   });
-  return JSON.parse(response.text || "[]");
-};
-
-// Fix: Added missing analyzeMarketTrends function required by Dashboard.tsx
-export const analyzeMarketTrends = async (query: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: `Analyze current market trends for the query: ${query}. Focus on e-commerce opportunities in 2026. Return a concise and informative summary.`,
-    config: {
-      tools: [{ googleSearch: {} }]
-    }
-  });
-  return response.text || "";
-};
-
-// Fix: Added missing generateProductDescription function required by AIAssistant.tsx
-export const generateProductDescription = async (productInfo: string, tone: string, audience: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview', // Complex text task
-    contents: `Generate a professional and high-converting product description based on:
-    Information: ${productInfo}
-    Tone: ${tone}
-    Audience: ${audience}
-    Format the output with clear sections and persuasive language.`,
-  });
-  return response.text || "";
+  return JSON.parse(cleanJson(response.text || "[]"));
 };
 
 export const getDeepProductAnalysis = async (productName: string, lang: Language = 'es') => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `[CONTEXT: MARCH 2026] Perform deep market research for product: "${productName}". 
-    Respond strictly in ${lang}.
-    JSON with: competitors (array), customerSentiment (string), priceHistory (array), topRisks (array), sources (array {title, uri}).`,
+    contents: `[ANÁLISIS DE COMPETENCIA ENERO 2026] 
+    Investiga a fondo el producto: "${productName}". 
+    Encuentra enlaces reales de competidores y fuentes de noticias. 
+    Asegúrate de que las URLs en 'sources' sean funcionales.`,
     config: {
       tools: [{ googleSearch: {} }],
-      responseMimeType: "application/json"
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          competitors: { type: Type.ARRAY, items: { type: Type.STRING } },
+          customerSentiment: { type: Type.STRING },
+          topRisks: { type: Type.ARRAY, items: { type: Type.STRING } },
+          sources: { 
+            type: Type.ARRAY, 
+            items: { 
+              type: Type.OBJECT, 
+              properties: { 
+                title: { type: Type.STRING }, 
+                uri: { type: Type.STRING } 
+              } 
+            } 
+          }
+        },
+        required: ["competitors", "customerSentiment", "topRisks", "sources"]
+      }
     }
   });
-  return JSON.parse(response.text || "{}");
+  return JSON.parse(cleanJson(response.text || "{}"));
 };
 
 export const analyzeNicheMarket = async (niche: string, lang: Language = 'es') => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const response = await ai.models.generateContent({
     model: 'gemini-3-flash-preview',
-    contents: `[CONTEXT: 2026 MARKET DATA] Research market structure for: "${niche}". 
-    Respond strictly in ${lang}.
-    JSON with: brands (array {name, sharePercent}), giniIndex (number), insight (string).`,
+    contents: `Analiza la estructura competitiva del nicho "${niche}" en Enero 2026 usando Google Search.`,
     config: {
       tools: [{ googleSearch: {} }],
-      responseMimeType: "application/json"
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          brands: { 
+            type: Type.ARRAY, 
+            items: { 
+              type: Type.OBJECT, 
+              properties: { 
+                name: { type: Type.STRING }, 
+                sharePercent: { type: Type.NUMBER } 
+              } 
+            } 
+          },
+          giniIndex: { type: Type.NUMBER },
+          insight: { type: Type.STRING }
+        },
+        required: ["brands", "giniIndex", "insight"]
+      }
     }
   });
-  return JSON.parse(response.text || "{}");
+  return JSON.parse(cleanJson(response.text || "{}"));
+};
+
+export const analyzeMarketTrends = async (query: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-flash-preview',
+    contents: `Resumen ejecutivo basado en noticias de esta semana (Enero 2026) para: "${query}".`,
+    config: { tools: [{ googleSearch: {} }] }
+  });
+  return response.text || "";
+};
+
+export const generateProductDescription = async (productInfo: string, tone: string, audience: string) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const response = await ai.models.generateContent({
+    model: 'gemini-3-pro-preview',
+    contents: `Crea un copy de venta agresivo para: ${productInfo}. Tono: ${tone}. Audiencia: ${audience}.`,
+  });
+  return response.text || "";
 };

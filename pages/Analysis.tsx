@@ -4,6 +4,12 @@ import { analyzeNicheMarket } from '../services/geminiService';
 import { Language } from '../types';
 import { translations } from '../translations';
 
+interface AnalysisData {
+  brands?: Array<{ name: string; sharePercent: number }>;
+  giniIndex?: number;
+  insight?: string;
+}
+
 interface AnalysisProps {
   niche?: string;
   lang: Language;
@@ -11,7 +17,7 @@ interface AnalysisProps {
 
 const Analysis: React.FC<AnalysisProps> = ({ niche = "E-commerce 2026", lang }) => {
   const t = translations[lang];
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AnalysisData | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {

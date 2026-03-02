@@ -106,7 +106,7 @@ const DailyFinder: React.FC<DailyFinderProps> = ({ onAnalyzeProduct, lang }) => 
     try {
       const results = await huntWinningProducts(lang);
       // Validar que los resultados tengan un nombre por lo menos
-      const validResults = results.filter((r: any) => r.name && r.name !== "");
+      const validResults = results.filter((r: WinningProduct) => r.name && r.name !== "");
       setProducts(validResults);
       localStorage.setItem(`daily_products_v4_${lang}`, JSON.stringify({
         date: new Date().toDateString(),

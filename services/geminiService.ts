@@ -2,14 +2,22 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Language } from "../types";
 
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+
+if (!API_KEY) {
+  console.warn('WARNING: VITE_GEMINI_API_KEY is not set. AI features will not work.');
+}
+
+const getAI = () => new GoogleGenAI({ apiKey: API_KEY });
+
 const cleanJson = (text: string) => {
   return text.replace(/```json/g, "").replace(/```/g, "").trim();
 };
 
 export const huntWinningProducts = async (lang: Language = 'es') => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAI();
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.0-flash',
     contents: `[INVESTIGACIÓN DE MERCADO REAL ENERO 2026] 
     Utiliza Google Search para identificar los 50 productos con mayor tendencia de ventas esta semana en TikTok Shop, Amazon y marketplaces globales.
     
@@ -45,9 +53,9 @@ export const huntWinningProducts = async (lang: Language = 'es') => {
 };
 
 export const getDeepProductAnalysis = async (productName: string, lang: Language = 'es') => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAI();
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.0-flash',
     contents: `[ANÁLISIS DE COMPETENCIA ENERO 2026] 
     Investiga a fondo el producto: "${productName}". 
     Encuentra enlaces reales de competidores y fuentes de noticias. 
@@ -80,9 +88,9 @@ export const getDeepProductAnalysis = async (productName: string, lang: Language
 };
 
 export const analyzeNicheMarket = async (niche: string, lang: Language = 'es') => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAI();
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.0-flash',
     contents: `Analiza la estructura competitiva del nicho "${niche}" en Enero 2026 usando Google Search.`,
     config: {
       tools: [{ googleSearch: {} }],
@@ -111,9 +119,9 @@ export const analyzeNicheMarket = async (niche: string, lang: Language = 'es') =
 };
 
 export const analyzeMarketTrends = async (query: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAI();
   const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-2.0-flash',
     contents: `Resumen ejecutivo basado en noticias de esta semana (Enero 2026) para: "${query}".`,
     config: { tools: [{ googleSearch: {} }] }
   });
@@ -121,9 +129,9 @@ export const analyzeMarketTrends = async (query: string) => {
 };
 
 export const generateProductDescription = async (productInfo: string, tone: string, audience: string) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = getAI();
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-2.0-flash',
     contents: `Crea un copy de venta agresivo para: ${productInfo}. Tono: ${tone}. Audiencia: ${audience}.`,
   });
   return response.text || "";

@@ -4,6 +4,13 @@ import { WinningProduct, Language } from '../types';
 import { getDeepProductAnalysis } from '../services/geminiService';
 import { translations } from '../translations';
 
+interface ProductAnalysis {
+  competitors?: string[];
+  customerSentiment?: string;
+  topRisks?: string[];
+  sources?: Array<{ title: string; uri: string }>;
+}
+
 interface ProductDetailsProps {
   product: WinningProduct | null;
   lang: Language;
@@ -11,7 +18,7 @@ interface ProductDetailsProps {
 
 const ProductDetails: React.FC<ProductDetailsProps> = ({ product, lang }) => {
   const t = translations[lang];
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] = useState<ProductAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [imgError, setImgError] = useState(false);
